@@ -99,6 +99,7 @@ int NextCadr(size_t numbercadr, CvCapture* capture, int flag, std::queue <IplIma
 		}
 		return 0;
 	}
+	return 0;
 }
 
 typedef int *func(size_t, CvCapture*, int, std::queue <IplImage*> &);
