@@ -6,24 +6,34 @@
 #include <thread>
 #include <opencv2/imgproc/imgproc_c.h>
 
-
 using namespace std;
-uint32_t h = 0; //height of Window
-uint32_t w = 0; //widht of Window
+int width = 0, height = 0;
 
 //create a frame
 IplImage* CadrMaker(IplImage* cadr1, IplImage* cadr2, int k){
 	IplImage* src = NULL;
-	//resize second video
-	src = cvCreateImage(cvSize(w / 4, h / 4), cadr2->depth, cadr2->nChannels);
-	cvResize(cadr2, src, 1);
-	//post it
-	cvSetImageROI(cadr1, cvRect(w * 3 / 4, 0, src->width, src->height));
-	cvZero(cadr1);
-	cvCopyImage(src, cadr1);
-	cvResetImageROI(cadr1);
-	if (src)cvReleaseImage(&src);
-	return cadr1;
+	IplImage* src2 = NULL;
+	//what of video is a base
+
+	if (cadr1->width>cadr2->width)
+	{
+		width = cadr1->width;
+		height = cadr1->height;
+	}
+	else
+	{
+		width = cadr2->width;
+		height = cadr2->height;
+	}
+	src = cvCreateImage(cvSize(width, height), cadr1->depth, cadr1->nChannels);
+	cvResize(cadr1, src, 2);
+	src2 = cvCreateImage(cvSize(width / 4, height / 4), cadr2->depth, cadr2->nChannels);
+	cvResize(cadr2, src2, 2);
+	cvSetImageROI(src, cvRect(src->width * 3 / 4, 0, src2->width, src2->height));
+	cvCopyImage(src2, src);
+	cvResetImageROI(src);
+	if (src2)cvReleaseImage(&src2);
+	return src;
 }
 
 //Show frame
@@ -71,6 +81,7 @@ int NextCadr(size_t numbercadr, CvCapture* capture, int flag, std::queue <IplIma
 	}
 	return 0;
 }
+
 
 int thread_func(size_t numbercadr, CvCapture* capture, uint32_t &flag, std::queue <IplImage*> & Video)
 {	
@@ -128,13 +139,11 @@ int main(int argc, char* argv[1])
 			k = 2;
 		}
 	}
-	h = (uint32_t)cvGetCaptureProperty(capture1, CV_CAP_PROP_FRAME_HEIGHT);
-	w = (uint32_t)cvGetCaptureProperty(capture1, CV_CAP_PROP_FRAME_WIDTH);
 
 	//buffer filling
 	size_t numbercadr1 = (size_t)fps1;//number of cadre at first video
 	size_t numbercadr2 = (size_t)fps2;//number of cadre in second video
-	printf("%d, %d", numbercadr1, numbercadr2);
+
 	// Responsible for the status of the first video 1 - Entry and delete, 2 - delete, 0- empty.
 	uint32_t flag1 = 1;
 	while (Video1.size() < numbercadr1 && flag1 != 0){
@@ -186,13 +195,14 @@ int main(int argc, char* argv[1])
 			if (capture2)cvReleaseCapture(&capture2);
 			d = 1;
 			time0 = time1;
-			std::thread reader2(thread_func, numbercadr2, capture2, std::ref(flag2), std::ref(Video2));
-			reader2.join();
+			std::thread reader1(thread_func, numbercadr1, capture1, std::ref(flag1), std::ref(Video1));
+			reader1.join();
 		}
 		c = cvWaitKey(time0);
 		if (c == 27){ break; }
 		i++;
 	}
+
 	//release resources 
 	if (capture1)cvReleaseCapture(&capture1);
 	if (capture2)cvReleaseCapture(&capture2);
