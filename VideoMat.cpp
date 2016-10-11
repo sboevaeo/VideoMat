@@ -39,7 +39,9 @@ IplImage* CadrMaker(IplImage* cadr1, IplImage* cadr2, int k){
 //Show frame
 void MovieMaker(std::queue <IplImage*> & Video1, std::queue <IplImage*> & Video2, int d, int k){
 	if (d == 0){
-		cvShowImage("Video Test", CadrMaker(Video1.front(), Video2.front(), k));
+		IplImage* tmp = CadrMaker(Video1.front(), Video2.front(), k);
+		cvShowImage("Video Test", tmp);
+		cvReleaseImage(&tmp);
 		//if we have a two video
 	}
 	else if (d == -1){
